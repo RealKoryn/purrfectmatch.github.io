@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#fd267a">
+<meta name="description" content="PurrfectMatch: swipe, match and chat with cats near you.">
+<title>PurrfectMatch</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fd267a"/><stop offset="1" stop-color="#ff6036"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="side" id="side" aria-label="Matches and messages">
+    <div class="side-top">
+      <div class="brand"><img src="logo.png" alt="" class="logo"><span>purrfectmatch</span></div>
+      <div class="side-top-actions">
+        <button class="icon-btn themeBtn" aria-label="Toggle dark mode"></button>
+        <button class="icon-btn me-mini" id="meBtn" aria-label="Settings and profile"><img id="meBtnImg" alt="" hidden><i data-lucide="settings" id="meBtnIcon"></i></button>
+        <button class="icon-btn only-mobile" id="closeSide" aria-label="Close"><i data-lucide="x"></i></button>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="matches" role="tab">Matches <span class="count" id="cMatches" hidden></span></button>
+      <button class="tab" data-tab="likes" role="tab">Likes You <span class="count" id="cLikes" hidden></span></button>
+      <button class="tab" data-tab="messages" role="tab">Messages <span class="count" id="cMsgs" hidden></span></button>
+    </div>
+    <div class="side-body" id="sideBody"></div>
+    <button class="side-me" id="sideMe" aria-label="View your profile">
+      <span class="sm-av"><img id="sideMeImg" alt="" hidden><i data-lucide="user-round" id="sideMeIcon"></i></span>
+      <span class="sm-tx"><b id="sideMeName">You</b><small>View my profile</small></span>
+      <i data-lucide="chevron-right"></i>
+    </button>
+  </aside>
+  <div class="side-scrim" id="sideScrim"></div>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn" id="openSide" aria-label="Matches and messages">
+        <i data-lucide="message-circle"></i><span class="dot" id="topDot" hidden></span>
+      </button>
+      <div class="brand"><img src="logo.png" alt="" class="logo"><span>purrfectmatch</span></div>
+      <div class="top-r"><button class="icon-btn themeBtn" aria-label="Toggle dark mode"></button><button class="icon-btn" id="meBtn2" aria-label="Settings"><i data-lucide="settings"></i></button></div>
+    </header>
+
+    <div class="boost-bar" id="boostBar" hidden>
+      <i data-lucide="zap"></i><span>Boost active</span><b id="boostTime">30:00</b>
+      <span class="sep"></span><i data-lucide="eye"></i><b id="boostViews">0</b>
+    </div>
+
+    <section class="stage">
+      <div class="stack" id="stack"></div>
+      <div class="empty" id="empty"></div>
+    </section>
+
+    <div class="actions">
+      <button class="act sm rewind" id="rewind" aria-label="Rewind" title="Rewind (Backspace)" disabled><i data-lucide="undo-2"></i></button>
+      <button class="act lg nope" id="pass" aria-label="Nope" title="Nope (←)"><i data-lucide="x"></i></button>
+      <button class="act sm super" id="boost" aria-label="Super Like" title="Super Like (↑)"><i data-lucide="star"></i><span class="pip" id="superLeft">3</span></button>
+      <button class="act lg like" id="like" aria-label="Like" title="Like (→)"><i data-lucide="heart"></i></button>
+      <button class="act sm zap" id="zap" aria-label="Boost" title="Boost"><i data-lucide="zap"></i></button>
+    </div>
+
+    <section class="profile" id="profile" aria-hidden="true"></section>
+    <section class="chat" id="chat" aria-hidden="true"></section>
+  </main>
+</div>
+
+<!-- ============ MATCH OVERLAY ============ -->
+<div class="match" id="match" role="dialog" aria-modal="true" aria-label="It's a match">
+  <div class="match-inner">
+    <div class="match-title">It's a Match!</div>
+    <p class="match-sub" id="matchSub"></p>
+    <div class="pair">
+      <div class="ph me"><img id="matchMe" alt="" hidden><i data-lucide="user-round" id="matchMeIcon"></i></div>
+      <div class="ph cat"><img id="matchImg" alt=""></div>
+    </div>
+    <button class="btn-white" id="matchMsg">Send a message</button>
+    <button class="btn-ghost" id="matchKeep">Keep swiping</button>
+  </div>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal" id="boostModal" aria-hidden="true">
+  <div class="modal-card center" role="dialog" aria-label="Boost">
+    <div class="big-ico zap"><i data-lucide="zap"></i></div>
+    <h2>Be a top cat for 30 minutes</h2>
+    <p class="muted">Get up to 3x more profile views, and cats are far more likely to like you back while Boost is on.</p>
+    <button class="btn-grad" id="boostGo">Boost me</button>
+    <button class="link-btn" data-close>Maybe later</button>
+  </div>
+</div>
+
+<div class="modal" id="settings" aria-hidden="true">
+  <div class="modal-card wide" role="dialog" aria-label="Settings">
+    <div class="modal-head"><h2>Settings</h2><button class="icon-btn" data-close aria-label="Close"><i data-lucide="x"></i></button></div>
+    <div class="set-body">
+
+      <div class="grp">Profile</div>
+      <div class="me-top">
+        <label class="me-avatar" title="Change photo">
+          <img id="meImg" alt="" hidden><i data-lucide="user-round" id="meIcon"></i>
+          <span class="cam"><i data-lucide="camera"></i></span>
+          <input type="file" id="mePhoto" accept="image/*" hidden>
+        </label>
+        <button class="link-btn" id="removePhoto" hidden>Remove photo</button>
+      </div>
+      <div class="field tight"><label class="lbl" for="meName">Name</label><input class="txt" id="meName" maxlength="24" placeholder="Your name"></div>
+      <div class="field tight"><label class="lbl" for="meBio">About me</label><textarea class="txt" id="meBio" maxlength="140" rows="2" placeholder="A human who owns a can opener"></textarea></div>
+
+      <div class="grp">Appearance</div>
+      <label class="set-row"><span class="si"><i data-lucide="moon"></i></span><span class="st"><b>Dark mode</b><small>Easier on the eyes at night</small></span><input type="checkbox" class="switch" id="swDark"></label>
+      <label class="set-row"><span class="si"><i data-lucide="monitor-smartphone"></i></span><span class="st"><b>Match device theme</b><small>Follow your system setting</small></span><input type="checkbox" class="switch" id="swAuto"></label>
+      <div class="set-row col"><span class="st"><b>Accent colour</b></span><div class="accents" id="accents">
+        <button data-v="pink" aria-label="Pink"></button><button data-v="purple" aria-label="Purple"></button><button data-v="blue" aria-label="Blue"></button><button data-v="green" aria-label="Green"></button><button data-v="red" aria-label="Red"></button>
+      </div></div>
+
+      <div class="grp" id="secDisc">Discovery</div>
+      <div class="field tight"><div class="field-row"><label for="fDist">Maximum distance</label><output id="oDist"></output></div><input type="range" id="fDist" min="1" max="25" step="1"></div>
+      <div class="field tight"><div class="field-row"><label for="fAge">Maximum age</label><output id="oAge"></output></div><input type="range" id="fAge" min="1" max="12" step="1"></div>
+
+      <div class="grp">Cards &amp; swiping</div>
+      <label class="set-row"><span class="si"><i data-lucide="map-pin"></i></span><span class="st"><b>Show distance</b><small>Display how far each cat is</small></span><input type="checkbox" class="switch" data-k="showDist"></label>
+      <label class="set-row"><span class="si"><i data-lucide="tags"></i></span><span class="st"><b>Show personality tags</b><small>Traits shown on the card</small></span><input type="checkbox" class="switch" data-k="showTags"></label>
+      <div class="field tight"><div class="field-row"><label for="fSens">Swipe sensitivity</label><output id="oSens"></output></div><input type="range" id="fSens" min="1" max="3" step="1"></div>
+
+      <div class="grp">Notifications &amp; feedback</div>
+      <label class="set-row"><span class="si"><i data-lucide="bell"></i></span><span class="st"><b>Message notifications</b><small>Pop-ups for new messages and likes</small></span><input type="checkbox" class="switch" data-k="notif"></label>
+      <label class="set-row"><span class="si"><i data-lucide="volume-2"></i></span><span class="st"><b>Sound effects</b><small>Swipes, matches and messages</small></span><input type="checkbox" class="switch" data-k="sound"></label>
+      <label class="set-row"><span class="si"><i data-lucide="smartphone"></i></span><span class="st"><b>Vibration</b><small>Haptic feedback on supported phones</small></span><input type="checkbox" class="switch" data-k="haptics"></label>
+
+      <div class="grp">Accessibility</div>
+      <label class="set-row"><span class="si"><i data-lucide="gauge"></i></span><span class="st"><b>Reduce motion</b><small>Fewer animations and transitions</small></span><input type="checkbox" class="switch" data-k="reduce"></label>
+
+      <div class="grp">Your data</div>
+      <p class="muted small" id="dataStats"></p>
+      <div class="btn-row">
+        <button class="btn-outline" id="exportData"><i data-lucide="download"></i>Export</button>
+        <button class="btn-outline danger" id="clearChats"><i data-lucide="trash-2"></i>Clear matches</button>
+      </div>
+      <button class="link-btn danger" id="resetAll">Reset everything</button>
+      <p class="muted small foot">PurrfectMatch 1.0 · Settings save automatically on this device. Cat photos from The Cat API.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="welcome" aria-hidden="true">
+  <div class="modal-card center" role="dialog" aria-label="Welcome">
+    <img src="logo.png" alt="" class="wlogo">
+    <h2>Welcome to PurrfectMatch</h2>
+    <p class="muted">Swipe through real cats, match, and chat. What should they call you?</p>
+    <input class="txt" id="welName" maxlength="24" placeholder="Your first name" autocomplete="given-name">
+    <button class="btn-grad" id="welGo">Start swiping</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+<script src="script.js"></script>
+</body>
+</html>
