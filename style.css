@@ -362,3 +362,54 @@ body.reduce *,body.reduce *::before,body.reduce *::after{animation-duration:.01m
 .p-you{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--grad);color:#fff;letter-spacing:.03em}
 .p-actions .btn-grad{min-width:220px}
 @media (max-width:899px){.profile{z-index:36}}
+
+/* ---------- v6: Cabbagemints limited event (ocean theme) ---------- */
+.event-bar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:7px 16px;border-radius:999px;color:#fff;font-size:13.5px;font-weight:600;flex:none;max-width:calc(100% - 20px);
+  background:linear-gradient(110deg,#0077b6,#00b4d8,#48e5ff,#00b4d8,#0077b6);background-size:250% 100%;animation:tideBg 6s linear infinite;box-shadow:0 4px 16px rgba(0,180,216,.45)}
+.event-bar .lucide{width:16px;height:16px;flex:none}
+.event-bar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes tideBg{to{background-position:-250% 0}}
+@keyframes shine{to{background-position:-200% 0}}
+@keyframes drift{to{background-position:-1200px 0}}
+@keyframes rise{0%{bottom:-30px;opacity:0;transform:translateX(0)}10%{opacity:.9}50%{transform:translateX(14px)}100%{bottom:110%;opacity:0;transform:translateX(-8px)}}
+@keyframes glow{50%{box-shadow:0 0 0 3px #a6f3ff,0 0 44px rgba(0,212,255,.95),0 8px 24px rgba(0,0,0,.3)}}
+@keyframes tide{to{background-position:0 0,0 100%}}
+
+.ocean-fx{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.fx-b{position:absolute;bottom:-30px;border-radius:50%;border:1.5px solid rgba(255,255,255,.7);background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.7),rgba(255,255,255,.08) 60%);animation:rise 8s linear infinite;opacity:0}
+.fx-wave{position:absolute;left:0;right:0;bottom:0;height:60px;background-repeat:repeat-x;background-size:1200px 60px;animation:drift 14s linear infinite;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'%3E%3Cpath d='M0 30 Q150 0 300 30 T600 30 T900 30 T1200 30 V60 H0Z' fill='%2300d4ff' fill-opacity='.35'/%3E%3C/svg%3E")}
+.fx-wave.w2{bottom:-12px;opacity:.8;animation-duration:9s;animation-direction:reverse;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'%3E%3Cpath d='M0 30 Q150 0 300 30 T600 30 T900 30 T1200 30 V60 H0Z' fill='%237defff' fill-opacity='.28'/%3E%3C/svg%3E")}
+
+.rare-tag{position:absolute;top:22px;left:12px;z-index:2;display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#02344f;
+  background:linear-gradient(110deg,#7defff,#fff,#7defff);background-size:200% 100%;animation:shine 3s linear infinite;pointer-events:none}
+.rare-tag .lucide{width:14px;height:14px}
+.p-photo .rare-tag{top:14px;left:14px}
+
+.card.ocean{box-shadow:0 0 0 3px #48e5ff,0 0 28px rgba(0,212,255,.65),0 8px 24px rgba(0,0,0,.3);animation:glow 3s ease-in-out infinite}
+.card.ocean .grad{background:linear-gradient(transparent,rgba(0,35,70,.9))}
+.card.ocean .chip{border-color:#7defff;background:rgba(0,80,120,.35)}
+
+.profile.ocean{--surface:#05395a;--text:#eafcff;--muted:#8fdcf0;--line:rgba(125,239,255,.22);--grad:linear-gradient(90deg,#00b4d8,#48e5ff);--pink:#48e5ff;
+  background:radial-gradient(120% 60% at 50% 0%,rgba(125,239,255,.35),transparent 60%),linear-gradient(180deg,#032846 0%,#05598a 55%,#0aa6c9 100%);background-size:100% 100%,100% 180%}
+.profile.ocean.open{animation:tide 14s ease-in-out infinite alternate}
+.profile.ocean>.profile-scroll,.profile.ocean>.p-actions{position:relative;z-index:1}
+.profile.ocean .p-photo{box-shadow:0 14px 40px rgba(0,212,255,.35)}
+.profile.ocean .p-close{background:linear-gradient(135deg,#00b4d8,#48e5ff);color:#02344f;box-shadow:0 4px 18px rgba(0,212,255,.6)}
+.profile.ocean h1{background:linear-gradient(90deg,#fff,#7defff,#fff);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shine 4s linear infinite}
+.profile.ocean h1 .lucide{-webkit-text-fill-color:initial}
+.profile.ocean .p-chips .chip{border-color:#7defff;color:#7defff;background:rgba(0,40,70,.25)}
+.profile.ocean .p-actions{background:none}
+
+.chat.ocean{--surface:#06344f;--bg:#0a4a6e;--text:#eafcff;--muted:#8fdcf0;--line:rgba(125,239,255,.22);--bubble:#0d5a82;--grad:linear-gradient(90deg,#00b4d8,#2f8fff);--pink:#48e5ff;
+  background:linear-gradient(180deg,#04304d,#06506f,#087aa0);background-size:100% 200%;animation:tide 16s ease-in-out infinite alternate}
+.chat.ocean>*:not(.ocean-fx){position:relative;z-index:1}
+.match.ocean{background:linear-gradient(160deg,#023e73,#00b4d8)}
+.tile.ocean{box-shadow:0 0 0 2px #48e5ff,0 0 14px rgba(0,212,255,.6)}
+.row .av.ocean,.chat-head .av.ocean{box-shadow:0 0 0 2px #48e5ff}
+
+body.reduce .ocean-fx *,body.reduce .event-bar,body.reduce .rare-tag,body.reduce .card.ocean,body.reduce .profile.ocean,body.reduce .chat.ocean,body.reduce .profile.ocean h1{animation:none!important}
+@media (prefers-reduced-motion:reduce){.ocean-fx *,.event-bar,.rare-tag,.card.ocean,.profile.ocean,.chat.ocean,.profile.ocean h1{animation:none!important}}
+.p-body h1 .lucide,.p-body h1 .p-you{flex:none}
+.match.ocean .btn-white{color:#0077b6}

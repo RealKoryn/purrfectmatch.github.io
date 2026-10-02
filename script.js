@@ -134,6 +134,25 @@ function toCat(raw) {
   };
 }
 
+/* ---------- limited event: Cabbagemints the shark kitty ---------- */
+const MINTS_ID = 'cabbagemints';
+const EVENT_END = new Date('2026-11-01T00:00:00').getTime();
+const eventOn = () => Date.now() < EVENT_END;
+const TACO_RE = /\bis\s+(?:cabbage\s*)?mints\s+a\s+taco\b/;
+const mintsCat = () => ({
+  id: MINTS_ID, url: 'mints.png', special: 'mints', name: 'Cabbagemints', age: 7, dist: 0, loc: 'The Ocean',
+  breed: 'Shark Kitty', origin: 'The Deep Blue', weight: null, life: null, verified: true, persona: 'mints', likesYou: true,
+  bio: 'Part shark, part cat, 100% cabbage-adjacent. Limited-time legend. I bite (affectionately).',
+  desc: 'Last seen chasing a laser dot across the Mariana Trench. Definitely not a taco.',
+  tags: ['Chaotic', 'Fin-tastic', 'Minty Fresh', 'Loyal'],
+  job: 'Chief Chomp Officer', wants: 'Someone to share kelp tacos with (he is not a taco)'
+});
+const oceanFx = () => '<div class="ocean-fx">' + Array.from({ length: 10 }, (_, i) => {
+  const s = 6 + (i * 7) % 12;
+  return `<i class="fx-b" style="left:${4 + i * 9.6}%;width:${s}px;height:${s}px;animation-delay:${-(i * 1.3)}s;animation-duration:${6 + (i * 1.7) % 6}s"></i>`;
+}).join('') + '<div class="fx-wave w1"></div><div class="fx-wave w2"></div></div>';
+const rareTag = () => `<div class="rare-tag">${ic('waves')}Limited event · Rare</div>`;
+
 /* ---------- state ---------- */
 let deck = [], reserve = [], pos = 0, history = [], loading = false, failed = false, exhausted = false, busy = false;
 let matches = store.get('matches', []);
@@ -207,6 +226,10 @@ async function fetchCats() {
       }
       if (!okReq) throw new Error('network');
     }
+    // rare spawn: Cabbagemints swims into the deck during the event
+    if (eventOn() && !seen.has(MINTS_ID) && !matches.some(m => m.id === MINTS_ID) && Math.random() < .12) {
+      seen.add(MINTS_ID); deck.splice(Math.min(deck.length, pos + 1 + Math.floor(Math.random() * 3)), 0, mintsCat()); added++; new Image().src = 'mints.png';
+    }
     exhausted = added === 0 && deck.length - pos === 0;
   } catch { failed = true; }
   finally { loading = false; sync(); }
@@ -216,17 +239,18 @@ async function fetchCats() {
 const els = new Map();
 function buildCard(c) {
   const el = document.createElement('div');
-  el.className = 'card';
+  el.className = 'card' + (c.special ? ' ocean' : '');
   el.innerHTML = `
     <div class="skel"></div>
     <img class="photo" alt="${esc(c.name)}, ${esc(c.breed)}" draggable="false">
     <div class="top-grad"></div><div class="grad"></div>
+    ${c.special ? oceanFx() + rareTag() : ''}
     <div class="bars"><i></i></div>
     <div class="stamp like">Like</div><div class="stamp nope">Nope</div><div class="stamp sup">Super Like</div>
     <div class="info">
       <div class="nm-row"><div class="nm">${esc(c.name)}<small>${c.age}</small></div>${c.verified ? ic('badge-check') : ''}</div>
       <div class="line">${ic('cat')}${esc(c.breed)}</div>
-      <div class="line dist">${ic('map-pin')}${c.dist} ${c.dist === 1 ? 'kilometre' : 'kilometres'} away</div>
+      ${c.loc ? `<div class="line">${ic('map-pin')}Lives in ${esc(c.loc)}</div>` : `<div class="line dist">${ic('map-pin')}${c.dist} ${c.dist === 1 ? 'kilometre' : 'kilometres'} away</div>`}
       <div class="chips">${c.tags.slice(0, 3).map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>
       <button class="info-btn" aria-label="Open profile">${ic('chevron-up')}</button>
     </div>`;
@@ -407,7 +431,8 @@ function decide(kind, vx = 0, vy = 0) {
 function createMatch(c) {
   if (matches.some(m => m.id === c.id)) return;
   const m = { ...c, msgs: [], unread: false, t: Date.now(), mem: {}, opened: false };
-  matches.unshift(m); saveMatches(); renderSide(); showMatch(m); scheduleOpener(m); sfx('match'); buzz([30, 40, 30]);
+  if (c.special) { seen.add(c.id); deck = deck.filter((x, i) => i < pos || x.id !== c.id); sync(); }
+  matches.unshift(m); saveMatches(); renderSide(); showMatch(m); scheduleOpener(m, c.special ? 3000 : undefined); sfx('match'); buzz([30, 40, 30]);
 }
 
 function rewind() {
@@ -436,12 +461,13 @@ function rewind() {
 const profileEl = $('#profile');
 function openProfile(c, ctx = 'deck') {
   const facts = [
-    ['briefcase', 'Works as', c.job], ['search', 'Looking for', c.wants], ['map-pin', 'Lives', `${c.dist} km away`],
+    ['briefcase', 'Works as', c.job], ['search', 'Looking for', c.wants], ['map-pin', 'Lives', c.loc || `${c.dist} km away`],
     c.origin && ['globe', 'From', c.origin], c.weight && ['weight', 'Weight', `${c.weight} kg`], c.life && ['clock', 'Lifespan', `${c.life} years`]
   ].filter(Boolean);
   profileEl.innerHTML = `
+    ${c.special ? oceanFx() : ''}
     <div class="profile-scroll">
-      <div class="p-photo"><img src="${esc(c.url)}" alt="${esc(c.name)}"><button class="p-close" id="pClose" aria-label="Close profile">${ic('chevron-down')}</button></div>
+      <div class="p-photo"><img src="${esc(c.url)}" alt="${esc(c.name)}">${c.special ? rareTag() : ''}<button class="p-close" id="pClose" aria-label="Close profile">${ic('chevron-down')}</button></div>
       <div class="p-body">
         <h1>${esc(c.name)} <small>${c.age}</small>${c.verified ? ic('badge-check') : ''}</h1>
         <div class="p-sub">${ic('cat')}${esc(c.breed)}</div>
@@ -456,6 +482,7 @@ function openProfile(c, ctx = 'deck') {
       ${ctx === 'deck' ? `<button class="act sm super" data-act="super" aria-label="Super Like">${ic('star')}</button>` : ''}
       <button class="act lg like" data-act="like" aria-label="Like">${ic('heart')}</button>
     </div>`}`;
+  profileEl.classList.toggle('ocean', !!c.special);
   profileEl.classList.add('open'); profileEl.setAttribute('aria-hidden', 'false'); icons();
   $('#pClose').onclick = closeProfile;
   profileEl.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
@@ -489,6 +516,7 @@ function openMyProfile() {
       </div>
     </div>
     <div class="p-actions"><button class="btn-grad" id="pEdit">Edit profile</button></div>`;
+  profileEl.classList.remove('ocean');
   profileEl.classList.add('open'); profileEl.setAttribute('aria-hidden', 'false'); icons();
   $('#pClose').onclick = closeProfile;
   $('#pEdit').onclick = () => { closeProfile(); openSettings(); };
@@ -505,7 +533,8 @@ function paintMeAvatar() {
 function showMatch(c) {
   matchId = c.id; paintMeAvatar();
   $('#matchImg').src = c.url; $('#matchImg').alt = c.name;
-  $('#matchSub').textContent = `You and ${c.name} have liked each other.`;
+  $('#matchSub').textContent = c.special ? `A rare shark kitty swam into your life. ${c.name} is yours!` : `You and ${c.name} have liked each other.`;
+  matchEl.classList.toggle('ocean', !!c.special);
   matchEl.classList.add('open'); icons();
 }
 const closeMatch = () => matchEl.classList.remove('open');
@@ -528,9 +557,10 @@ function renderSide() {
   const setC = (id, n) => { const e = $(id); e.hidden = !n; e.textContent = n; };
   setC('#cMatches', fresh.length); setC('#cLikes', likes.length); setC('#cMsgs', unread);
   $('#topDot').hidden = !(fresh.length || unread || likes.length);
+  paintEvent();
   $$('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   const body = $('#sideBody');
-  const tile = (m, extra) => `<button class="tile" data-id="${m.id}"><img src="${esc(m.url)}" alt="${esc(m.name)}" loading="lazy" draggable="false">${extra}<span class="nm">${esc(m.name)}, ${m.age}</span></button>`;
+  const tile = (m, extra) => `<button class="tile${m.special ? ' ocean' : ''}" data-id="${m.id}"><img src="${esc(m.url)}" alt="${esc(m.name)}" loading="lazy" draggable="false">${extra}<span class="nm">${esc(m.name)}, ${m.age}</span></button>`;
   if (tab === 'matches') {
     body.innerHTML = fresh.length
       ? `<div class="tiles">${fresh.map(m => tile(m, '<span class="new">New</span>')).join('')}</div>`
@@ -543,7 +573,7 @@ function renderSide() {
     body.querySelectorAll('[data-id]').forEach(b => b.onclick = () => { closeSide(); openProfile(likes.find(x => x.id === b.dataset.id), 'likes'); });
   } else {
     body.innerHTML = convos.length
-      ? convos.map(m => { const l = m.msgs.at(-1); return `<button class="row ${m.unread ? 'unread' : ''}" data-id="${m.id}"><img class="av" src="${esc(m.url)}" alt="" draggable="false"><div class="tx"><b>${esc(m.name)}</b><span>${l.from === 'me' ? 'You: ' : ''}${esc(l.text)}</span></div>${m.unread ? '<i class="ud"></i>' : `<time>${ago(l.t)}</time>`}</button>`; }).join('')
+      ? convos.map(m => { const l = m.msgs.at(-1); return `<button class="row ${m.unread ? 'unread' : ''}" data-id="${m.id}"><img class="av${m.special ? ' ocean' : ''}" src="${esc(m.url)}" alt="" draggable="false"><div class="tx"><b>${esc(m.name)}</b><span>${l.from === 'me' ? 'You: ' : ''}${esc(l.text)}</span></div>${m.unread ? '<i class="ud"></i>' : `<time>${ago(l.t)}</time>`}</button>`; }).join('')
       : `<div class="side-empty">${ic('message-circle')}<b>No messages yet</b>When you start a conversation with a match, it’ll show up here.</div>`;
     body.querySelectorAll('[data-id]').forEach(b => b.onclick = () => openChat(b.dataset.id));
   }
@@ -557,15 +587,17 @@ const OPENERS = {
   sweet: n => [`Hi ${n}! I’m so happy we matched. I’ve been purring since you swiped.`, `Hey ${n}, this is the best part of my day and I’ve already had two breakfasts.`],
   playful: n => [`${n}!! You’re here! Quick, say something before I get distracted by a moth.`, `Hey ${n}. Fair warning: I might knock something over mid-conversation.`],
   sassy: n => [`Oh, you matched with me. Good taste, ${n}. Don’t make it weird.`, `Hello ${n}. I don’t usually do this, but you seem to know what you’re doing.`],
-  chill: n => [`Hey ${n}. Just woke up from a nap. Nice to meet you.`, `Hi ${n}. I’m a bit shy, but I’m glad we matched.`]
+  chill: n => [`Hey ${n}. Just woke up from a nap. Nice to meet you.`, `Hi ${n}. I’m a bit shy, but I’m glad we matched.`],
+  mints: n => [`Blub blub. Ahoy ${n}! You found me. I’m Cabbagemints: shark, cat, legend. Not a taco.`, `*surfaces dramatically* ${n}! Welcome to the deep end. I brought snacks. They’re fish. Sorry.`]
 };
 const FLAV = {
   sweet: ['Aww. ', 'Honestly? ', 'You’re sweet. ', ''],
   playful: ['Haha! ', 'Ooh! ', 'Okay okay. ', ''],
   sassy: ['Obviously. ', 'Hmm. ', 'Sure. ', ''],
-  chill: ['Mm. ', 'Yeah. ', 'Honestly? ', '']
+  chill: ['Mm. ', 'Yeah. ', 'Honestly? ', ''],
+  mints: ['Blub. ', 'Chomp! ', 'Fin-tastic. ', 'Ahoy! ', '']
 };
-const STRONG = /(bye|goodnight|gtg|joke|funny|cute|pretty|handsome|beautiful|gorgeous|adorable|meet|date|hang ?out|come over|love you|like you|your name|who are you|how old|where (are|do) you|breed|thank|thx|ugly|stupid|dumb|hate)|how (are|r) (you|u)|what do you do|^(hi|hey|hello|yo|sup)/i;
+const STRONG = /\b(bye|goodnight|gtg|joke|funny|cute|pretty|handsome|beautiful|gorgeous|adorable|meet|date|hang ?out|come over|love you|like you|your name|who are you|how old|where (are|do) you|breed|thank|thx|ugly|stupid|dumb|hate)\b|how (are|r) (you|u)|what do you do|^(hi|hey|hello|yo|sup)\b/i;
 const FOLLOW = [
   { k: 'catdog', q: 'Be honest: cat person or dog person?' },
   { k: 'food', q: 'What’s your go-to dinner? Asking on behalf of my bowl.' },
@@ -587,12 +619,147 @@ const QR_BANK = ['What’s your favourite food?', 'Tell me a joke', 'Want to mee
 
 const tagsLine = m => m.tags.slice(0, 3).join(', ').toLowerCase();
 
+/* ---- understanding layer: intent + topic + memory, all on-device ---- */
+const OPINIONS = [
+  [/\b(box|boxes|cardboard)\b/, 'Boxes? If I fits, I sits. It is the law.'],
+  [/\b(laser|red dot)\b/, 'The red dot is my sworn enemy and my best friend. I will catch it one day.'],
+  [/\b(vacuum|hoover)\b/, 'The vacuum is a loud beast that lives in the closet. I do not discuss it.'],
+  [/\b(bath|shower|swim|swimming|water)\b/, 'Water? Only in a bowl, in a fountain, or being knocked off a table.'],
+  [/\bcucumbers?\b/, 'CUCUMBERS. Why do they sneak up like that. Why.'],
+  [/\b(birds?|pigeons?|squirrels?)\b/, 'Birds are TV for cats. I watch them for hours. I will not be taking questions.'],
+  [/\b(mouse|mice)\b/, 'Mice are my business. Do not ask about my business.'],
+  [/\bcatnip\b/, 'Catnip. I have no memory of what happened next, but it was incredible.'],
+  [/\b(music|songs?|sing|singing)\b/, 'I enjoy a good purr-cussion track. Mostly my own.'],
+  [/\b(rain|snow|storm|thunder)\b/, 'Weather is just things happening outside the window. Excellent viewing though.'],
+  [/\b(humans?|people)\b/, 'Humans are fine. Great at opening cans. Terrible at 4am timing.'],
+  [/\b(coffee|tea)\b/, 'Hot drinks are just very slow lap warmers. I support the concept.'],
+  [/\b(roblox|minecraft|videogames?|gaming)\b/, 'Games? I just sit on the controller. Very advanced strategy.'],
+  [/\b(code|coding|programming|computer|laptop|keyboard)\b/, 'A warm laptop and a keyboard to sit on? You have described my dream office.'],
+  [/\b(movies?|films?|netflix|anime)\b/, 'Movies are great. A screen with moving things and a warm person to lean on. Perfect.'],
+  [/\b(school|homework|exam|exams|study|studying)\b/, 'Homework is a flat surface designed for sitting on. I assist whenever I can.'],
+  [/\b(pizza)\b/, 'Pizza! Cheese is the closest thing humans make to a miracle.'],
+  [/\b(fish|tuna|salmon|sushi)\b/, 'Fish. Say it again, slower. I want to savour it.']
+];
+const topicReact = x => { for (const [re, a] of OPINIONS) if (re.test(x)) return a; return null; };
+const flip = s => s.replace(/\b(my|your|me|you|i)\b/g, w => ({ my: 'your', your: 'my', me: 'you', you: 'me', i: 'you' }[w]));
+const FAV = {
+  color: ['orange', 'blue, like the sky I stare at from the window', 'black, because it matches my soul and the sofa', 'grey, like a cloud that purrs'],
+  food: ['tuna, no contest', 'chicken, but only if you’re holding it', 'anything that crinkles when you open it', 'salmon. I’ll say no more'],
+  animal: ['birds, from behind glass', 'other cats, but only in theory', 'the one that lives in the mirror', 'you, if you open the can on time'],
+  movie: ['anything with fish in it', 'any nature documentary with birds', 'the one where the cat wins', 'anything you watch at 2am while I sit on you'],
+  song: ['my own purr, on repeat', 'anything with a bassline I can feel through the floor', 'the sound of a can opening'],
+  place: ['a sunbeam', 'the top of the fridge', 'a fresh laundry pile', 'the box the new thing came in'],
+  game: ['chase the red dot', 'knock-it-off-the-table', 'ankle ambush'],
+  season: ['summer, more sunbeams', 'winter, more laps', 'autumn, crunchy leaves are a battle'],
+  number: ['nine, naturally', 'four, the number of naps before lunch', 'three, my favourite amount of treats. Also any number higher'],
+  toy: ['a bit of string. A fancy toy loses to string every time', 'the little ball with a bell', 'a cardboard tube'],
+  treat: ['the crunchy ones', 'the soft ones', 'all of them. I’m not a snob'],
+  word: ['“dinner”', '“treat”, I can hear it from three rooms away', '“no”, I love it when other people say it']
+};
+const FEEL = [
+  [/\b(sad|down|lonely|depressed|upset|crying|bad day|rough day|stressed|anxious|worried)\b/, nm => [`Aw, ${nm}. Come here. Imagine a warm loaf of cat pressed against you, because I’m sending one.`, 'That sounds rough. I can’t fix it, but I can sit on you until it gets better. It’s my best skill.']],
+  [/\b(happy|great day|excited|good day|amazing|proud|so good|feeling good)\b/, nm => [`Yay, ${nm}! Happiness is contagious. I’m going to do a zoomie in your honour.`, 'That’s the best news. I’m purring so loud the neighbours can probably hear it.']],
+  [/\b(bored)\b/, () => ['Bored? Let’s knock something off a table. Instant entertainment.', 'Chase the red dot. Even if there isn’t one. Especially then.']],
+  [/\b(angry|mad|annoyed|frustrated|furious)\b/, () => ['Deep breaths. Slow blink. Now knock something off a shelf. Feel better?', 'Ugh, people can be the worst. Want me to hiss at them for you?']],
+  [/\b(sick|ill|headache|in pain|hurts)\b/, () => ['Rest up. I’ll supervise from the foot of the bed. It’s a very serious job.']],
+  [/\b(scared|afraid|nervous)\b/, nm => [`It’s okay, ${nm}. I’m small but very fierce. Mostly small.`]]
+];
+
+function smart(m, raw, t, nm, mem) {
+  const prev = (mem.hist || []).at(-1);
+  const sure = (...v) => [rnd(v)];
+  let x;
+  if (prev && prev.toLowerCase().trim() === raw.toLowerCase().trim() && raw.length > 3) return sure('You just said that. Are we in a loop? I love loops, I chase my tail in them.', 'Déjà vu. Or you pressed send twice. Either way, I heard you.');
+  if (/\b(are you|r u|is this) (a |an )?(real|robot|bot|ai|fake)\b/.test(t)) return sure('I am extremely real. I have fur, opinions and a very small brain, which is all a cat needs.', 'Real as a hairball. Want proof? I can leave some on your pillow.');
+  if (/what('?s| is) my name|who am i\b|do you (remember|know) (me|my name)/.test(t)) return (mem.name || me.name) ? sure(`You’re ${nm}. I never forget a name attached to a snack provider.`) : sure('You haven’t told me yet. Try “my name is …”.');
+  if (/what did i (just )?(say|type|write)|what was my last message/.test(t)) return prev ? sure(`You said “${prev.slice(0, 80)}”. I listen better than I look.`) : sure('Nothing yet! You’re a mysterious one.');
+  if ((x = t.match(/what('?s| is) my (?:favou?rite )?(\w+)\??$/)) && mem.facts && mem.facts[x[2]]) return sure(`Your ${x[2]} is ${mem.facts[x[2]]}. See? I listen. Sometimes.`);
+  if ((x = t.match(/(?:what(?:'s| is)|whats|tell me) (?:about )?your (?:fav|favou?rite|favorite) (\w+)/)) && FAV[x[1]]) return sure(`My favourite ${x[1]}? ${pick(FAV[x[1]], hash(m.id + x[1]))}.`);
+  if (/what (time|day|date) is it|what('?s| is) the (time|date|day)/.test(t)) { const d = new Date(); return sure(`It’s ${d.toLocaleDateString([], { weekday: 'long' })}, ${fmtTime(d)}. For me it’s always nap o’clock.`); }
+  if ((x = t.match(/(-?\d+(?:\.\d+)?)\s*([+\-*x×\/÷])\s*(-?\d+(?:\.\d+)?)/)) && /what|=|\?|equal|calc/.test(t)) {
+    const a = +x[1], b = +x[3], op = x[2];
+    if ((op === '/' || op === '÷') && b === 0) return sure('Dividing by zero is how you make a black hole. I like black holes, they’re just very big boxes.');
+    const r = { '+': a + b, '-': a - b, '*': a * b, x: a * b, '×': a * b, '/': a / b, '÷': a / b }[op];
+    return sure(`${a} ${op} ${b} is ${+r.toFixed(4)}. I counted on my paws and ran out of toes, so I borrowed yours.`, `That’s ${+r.toFixed(4)}. Maths is just treat-counting with extra steps.`);
+  }
+  if (/\b(i'm|im|i am|i feel|feeling|my day|today|i've been|ive been)\b/.test(t)) for (const [re, f] of FEEL) if (re.test(t)) return sure(...f(nm));
+  if (/how('?s| was| is) your (day|morning|evening|night|week)/.test(t)) return sure('Busy. I napped, I stared at a wall, I napped again. Peak productivity.', 'Excellent. I knocked three things off a shelf and nobody saw. How about yours?');
+  // choices: "A or B?"
+  const ch = t.match(/(?:would you rather|do you prefer|prefer|pick|choose)\s+(.+?)\s+or\s+(.+?)[?.!\s]*$/) || (t.endsWith('?') && t.match(/^(?:is |are |do |does |which |would |will )?(.{2,30}?)\s+or\s+(.{2,30}?)\?$/));
+  if (ch) { const c1 = hash(m.id + ch[1] + ch[2]) % 2 ? ch[2] : ch[1]; return sure(`${cap(c1)}. Obviously. I’d defend that in a court of law, then nap through the trial.`, `Definitely ${c1}. Don’t ask me to explain, it’s a gut feeling. Mostly hunger.`); }
+  if (/\bdo you (?:like|love) (?:me|u|you)\b/.test(t)) return sure('I like you a lot. Don’t let it go to your head. Okay, let it.');
+  if ((x = t.match(/\bdo you (?:like|love|enjoy|hate|want|eat|play with|watch|chase|fear|know|ever)\s+(.+?)[?.!\s]*$/))) { const w = flip(x[1]); return sure(topicReact(w) || [`${cap(w)}? Love it. Unconditionally.`, `${cap(w)}? Hmm. Not a fan, but I respect your passion.`, `${cap(w)}? I’d need to sniff it first.`][hash(m.id + w) % 3]); }
+  if ((x = t.match(/\bdo you have (?:a |an |any |some )?(.{2,25}?)[?.!\s]*$/))) return sure(/boyfriend|girlfriend|partner|crush|lover/.test(x[1]) ? 'Single and ready to mingle. Mostly ready to nap, but still.' : `${cap(x[1])}? Let me check under the couch.`);
+  if ((x = t.match(/\bare you (?:a |an |so |very |really )?(.{2,25}?)[?.!\s]*$/)) && !/^(there|ok|okay|sure|real|human)/.test(x[1])) {
+    const w = x[1];
+    if (/single|taken|seeing someone|available/.test(w)) return sure('Single. Looking for a warm lap and a long-term can opener.');
+    if (m.tags.some(g => g.toLowerCase().startsWith(w.slice(0, 4)))) return sure(`Yes, ${w}. I’ve been told I’m ${tagsLine(m)}.`);
+    return sure(`${cap(w)}? Sometimes. It depends on the time of day and my snack levels.`, `${cap(w)}? Only on Tuesdays.`);
+  }
+  if ((x = t.match(/\bcan you (.{3,40}?)[?.!\s]*$/))) return sure(`Can I ${flip(x[1])}? Technically yes. Will I? Ask again after a nap.`, `${cap(flip(x[1]))}? I could. I won’t. But I could.`);
+  if (/^(why|how come)\??$/.test(t)) return sure('Because I’m a cat. It’s the whole answer and also the most honest one.', 'Why not? That’s the real question.');
+  if (/^why (do|does|did|is|are|can|would)\b/.test(t)) return sure('Honestly, the universe is mostly cats pushing things off tables. That’s the answer to most questions.', 'Great question. My theory: snacks. It’s always snacks.');
+  if (/^(really|seriously|for real|no way|wow|huh)\??!*$/.test(t)) return sure('Really. I wouldn’t lie to you. About most things.', 'I said what I said.');
+  if (/^(and you|what about you|how about you|you)\??$/.test(t)) return sure(`Me? ${m.bio}`, `Me? I’m ${tagsLine(m)}. ${m.bio}`);
+  if ((x = t.match(/\bmy (?:favou?rite )?(\w+) is (?:a |an |the )?(.{2,30}?)[.!?\s]*$/)) && !/^(name|bio)$/.test(x[1])) {
+    (mem.facts = mem.facts || {})[x[1]] = x[2];
+    return sure(`${cap(x[2])}. Noted. Filed under things I’ll forget the second I smell tuna.`, `${cap(x[2])}, huh. I’ll remember that. Probably.`);
+  }
+  if ((x = t.match(/\bi (?:really |absolutely |just )?(like|love|enjoy|hate|play|watch|listen to|eat|drink|collect|study|use|am into|adore) (.{2,40}?)[.!?\s]*$/)) && !/^(you|u|your|ur|this|that|it|talking|chatting|being|how)\b/.test(x[2])) {
+    mem.likes = x[2];
+    return [topicReact(x[2]) || rnd([`${cap(x[2])}, huh. Tell me what you ${x[1] === 'hate' ? 'hate' : 'love'} most about it.`, `${cap(x[2])}? I don’t get it yet, but I trust you.`, `Noted: ${x[2]}. Filing that under things ${nm} is about.`])];
+  }
+  if ((x = t.match(/\bi (?:have|own|got|adopted|keep) (?:a |an |the |two |three |some )?(.{2,30}?)[.!?\s]*$/)) && !/^(to|no|not|been|never|just|so|had|done|it|this|that)\b/.test(x[1])) {
+    if (/\bcats?\b|kitt/.test(x[1])) return sure('Another cat?! I’m either honoured or deeply threatened.');
+    if (/\bdogs?\b|puppy/.test(x[1])) return sure('A dog. We can still be friends. Keep it on the other side of the room.');
+    return sure(topicReact(x[1]) || `A ${x[1]}? Tell me everything. Is it edible? Warm? Does it make noise?`);
+  }
+  if ((x = t.match(/^(?:what|who)(?:'s| is| are| was| were) (?:a |an |the )?(.{2,30}?)[?.!\s]*$/)) && !/^(your|you|my|up|time|date|day)\b/.test(x[1])) return sure(topicReact(x[1]) || `${cap(x[1])}? I’m not sure what that is. Is it edible? Is it warm? Those are the only categories I know.`);
+  if (t.length > 8 && (x = topicReact(t))) return [x];
+  return null;
+}
+
+/* ---- Cabbagemints: the shark kitty ---- */
+function mintsReply(m, raw, t, nm) {
+  const R = (...v) => [rnd(v)];
+  if (/\bmy name is\b|\bcall me\b/.test(t)) return null;
+  if (/\btaco/.test(t)) return [rnd(['I am a SHARK KITTY. A taco is a folded lunch. We are not the same.', 'Not a taco. Never was a taco. Don’t make me bite you affectionately.', 'A taco?! I am 60% shark, 40% cat, 100% legend. 0% taco.']), rnd(['…Although if I were a taco, I’d be an excellent one.', 'Why, are you hungry? I know a place. It’s underwater.', `Okay but now I want a taco. Thanks a lot, ${nm}.`])];
+  if (/\bcabbage\b/.test(t)) return R('Cabbage is just a leaf that never learned to swim.', 'My name is half cabbage and half mint. Fresh breath, fresh crunch. Sharks need both.');
+  if (/\b(shark|sharks|teeth|tooth|bite|jaws?)\b/.test(t)) return R('I have 300 teeth and I brush every one. Minty fresh. That’s the mints part.', 'Shark rules: keep swimming, keep snacking, keep one eye open. Cat rules: ignore all of that and nap.');
+  if (/\b(ocean|sea|swim|swimming|fish|whale|dolphin|crab|waves?|beach|deep|underwater|kelp)\b/.test(t)) return R('The ocean is great. Wet, but great. I do most of my thinking at the bottom of it.', 'I once raced a dolphin. I lost. I blame the fins. They were borrowed.', 'There’s a crab who owes me five fish. We don’t talk about it.');
+  if (/who are you|your name|what are you|what.*\byou\b.*\bare\b/.test(t)) return R('I’m Cabbagemints. Friends call me Mints. Half shark, half cat, entirely chaos.');
+  if (/where.*(live|you from|are you)|location|how far|address/.test(t)) return R('The ocean! Specifically wherever the snacks are. My address is “down, then left”.');
+  if (/how old|your age/.test(t)) return R('I’m 7. In shark years I’m a legend. In cat years I’m a legend with a mortgage.');
+  if (/limited|event|rare|special|shiny|verified|check ?mark|blue tick/.test(t)) return R('Yes, I’m limited-time. Collect me while supplies last. The blue check is real. I paid in fish.');
+  if (/\b(love|cute|handsome|pretty|adorable|cool|awesome|best)\b/.test(t) && !/\bdo you\b/.test(t)) return R('Blub. Say it again. Louder. The fish in the back didn’t hear.', `You’re making my fins blush, ${nm}.`);
+  if (/^(hi|hey|hello|yo|sup|ahoy|heya)\b/.test(t)) return R(`Ahoy, ${nm}! You are now swimming in the cool zone.`, `Blub! Hi ${nm}. Mind the water level, it’s rising with my excitement.`);
+  if (/sleep|\bnap\b|tired/.test(t)) return R('I sleep with one eye open. Shark rules. The other eye is on the snacks.');
+  if (/food|\beat\b|hungry|dinner|lunch|snack/.test(t)) return R('Food? I eat kelp and regret nothing. Wait, don’t tell the tacos I said that.');
+  if (/joke|funny|make me laugh/.test(t)) return R('What do you call a shark who is also a cat? A great white whisker.', 'Why did the shark cross the ocean? To get to the other tide.', 'What’s a shark’s favourite game? Swallow the leader.');
+  if (/\b(bye|goodnight|good night|gtg|see you|cya)\b/.test(t)) return R(`Fin for now! Swim safe, ${nm}.`, 'Bye! Leave a light on in the water. Sharks need those.');
+  return null;
+}
+
+let summoning = false;
+function summonMints() {
+  if (!eventOn()) return ['Mints? The shark kitty? He swam off when the tide changed. Maybe next event.'];
+  if (matches.some(x => x.id === MINTS_ID)) return ['You already found him. Go ask him yourself, he loves that question.'];
+  if (!summoning) {
+    summoning = true;
+    setTimeout(() => { summoning = false; if (!matches.some(x => x.id === MINTS_ID)) { createMatch(mintsCat()); toast('Cabbagemints joined your matches', 'waves'); } }, 6500);
+  }
+  return ['…wait. Did you just ask the secret question?', 'The water bowl just rippled. Something is swimming this way.'];
+}
+
 function respond(m, raw) {
   const t = raw.toLowerCase().replace(/[’]/g, "'").trim();
   const mem = m.mem = m.mem || {};
   const nm = mem.name || me.name || 'friend';
+  if (m.special !== 'mints' && TACO_RE.test(t)) return summonMints();
+  if (m.special === 'mints') { const r = mintsReply(m, raw, t, nm); if (r) return r; }
   const out = []; let handled = true;
   const say = (...v) => out.push(rnd(v));
+  const sm = smart(m, raw, t, nm, mem);
 
   // learn the user's name
   const nmatch = raw.match(/\bmy name is ([A-Za-z]{2,15})\b/i) || raw.match(/\bcall me ([A-Za-z]{2,15})\b/i) || raw.match(/\b(?:I'm|I’m|I am|Im) ([A-Z][a-z]{1,14})\b/);
@@ -601,7 +768,7 @@ function respond(m, raw) {
     say(`${mem.name}! That’s a good name. I’ll remember it, unless I get hungry.`, `Nice to meet you properly, ${mem.name}.`);
   }
   // answer to the cat's last question
-  else if (mem.pending && !t.includes('?') && t.length < 90 && !STRONG.test(t)) {
+  else if (mem.pending && !sm && !t.includes('?') && t.length < 90 && !STRONG.test(t)) {
     const p = mem.pending; mem.pending = null;
     const dog = /\bdogs?\b|puppy/.test(t), cat = /\bcats?\b|kitt|feline/.test(t);
     if (p === 'catdog') {
@@ -619,7 +786,8 @@ function respond(m, raw) {
 
   if (!handled || !out.length) {
     handled = true;
-    if (/\b(bye|goodnight|good night|gtg|g2g|see you|cya|ttyl|night night)\b/.test(t)) say(`Bye ${nm}. Come back soon, I’ll be here, probably asleep.`, 'Goodnight. I’ll keep your side of the bed warm. Okay I’ll take both sides.');
+    if (sm) out.push(...sm);
+    else if (/\b(bye|goodnight|good night|gtg|g2g|see you|cya|ttyl|night night)\b/.test(t)) say(`Bye ${nm}. Come back soon, I’ll be here, probably asleep.`, 'Goodnight. I’ll keep your side of the bed warm. Okay I’ll take both sides.');
     else if (/^(hi|hey|hello|hiya|yo|sup|heya|hola|hey there|good (morning|evening|afternoon))\b/.test(t)) say(`Hey ${nm}!`, `Hi ${nm}. Good to hear from you.`, 'Hello! You caught me mid-stretch.');
     else if (/how (are|r) (you|u)|how's it going|hows it going|what's up|whats up|wyd|how you doing|how have you been/.test(t)) say('Pretty good. I had a nap, a snack, and then another nap. You?', 'Living my best life. Currently sitting in a box that’s slightly too small.', 'Can’t complain. Well, I can. I just choose not to. How are you?');
     else if (/your name|who are you|what.*call you/.test(t)) say(`I’m ${m.name}. ${m.name} the ${m.breed}. Has a nice ring to it.`);
@@ -656,6 +824,9 @@ function respond(m, raw) {
 
   // persona flourish
   if (out.length && Math.random() < .35) { const f = rnd(FLAV[m.persona] || ['']); if (f && out[0].length > 14) out[0] = f + out[0]; }
+  // remember what they told us and bring it back up later
+  if (mem.likes && out.length && m.msgs.length > 6 && m.msgs.length - (mem.recallAt || 0) > 8 && Math.random() < .3) { mem.recallAt = m.msgs.length; out.push(`Also, I’m still thinking about the whole “${mem.likes}” thing, ${nm}.`); }
+  mem.hist = [...(mem.hist || []), raw].slice(-10);
   // keep the conversation moving
   if (!mem.pending && !out.some(o => o.includes('?')) && Math.random() < .55 && m.msgs.length > 1) {
     const used = mem.asked = mem.asked || [];
@@ -675,10 +846,12 @@ const fmtTime = t => new Date(t).toLocaleTimeString([], { hour: 'numeric', minut
 function openChat(id) {
   const m = getM(id); if (!m) return;
   chatId = id; m.unread = false; saveMatches(); closeSide(); closeProfile();
+  chatEl.classList.toggle('ocean', !!m.special);
   chatEl.innerHTML = `
+    ${m.special ? oceanFx() : ''}
     <div class="chat-head">
       <button class="icon-btn" id="chatBack" aria-label="Back">${ic('arrow-left')}</button>
-      <button class="who-btn" id="chatProfile" aria-label="View ${esc(m.name)}’s profile"><img class="av" src="${esc(m.url)}" alt=""><div class="who"><b>${esc(m.name)}</b><span id="chatStatus" class="on">Online</span></div></button>
+      <button class="who-btn" id="chatProfile" aria-label="View ${esc(m.name)}’s profile"><img class="av${m.special ? ' ocean' : ''}" src="${esc(m.url)}" alt=""><div class="who"><b>${esc(m.name)}</b><span id="chatStatus" class="on">Online</span></div></button>
       <button class="icon-btn" id="unmatch" aria-label="Unmatch">${ic('trash-2')}</button>
     </div>
     <div class="chat-body" id="chatBody"></div>
@@ -705,7 +878,7 @@ function bubbleHTML(x, i, m) {
 function renderChat() {
   const m = getM(chatId); if (!m) return;
   const b = $('#chatBody');
-  let html = `<div class="chat-intro"><img src="${esc(m.url)}" alt=""><b>You matched with ${esc(m.name)}</b>${esc(m.breed)} · ${m.dist} km away<br>Say something nice. Or just “meow”.</div>`;
+  let html = `<div class="chat-intro"><img src="${esc(m.url)}" alt=""><b>You matched with ${esc(m.name)}</b>${esc(m.breed)} · ${m.loc ? 'Lives in ' + esc(m.loc) : m.dist + ' km away'}<br>Say something nice. Or just “meow”.</div>`;
   if (m.msgs.length) html += `<div class="day">${new Date(m.msgs[0].t).toLocaleDateString([], { weekday: 'long' })} ${fmtTime(m.msgs[0].t)}</div>`;
   html += m.msgs.map((x, i) => bubbleHTML(x, i, m)).join('');
   const last = m.msgs.at(-1);
@@ -882,6 +1055,16 @@ function maybeWelcome() {
   $('#welGo').onclick = go; $('#welName').onkeydown = e => { if (e.key === 'Enter') go(); };
 }
 
+/* ---------- limited event banner ---------- */
+const evBar = $('#eventBar');
+function paintEvent() {
+  const on = eventOn() && !matches.some(m => m.id === MINTS_ID);
+  evBar.hidden = !on; if (!on) return;
+  const d = Math.max(1, Math.ceil((EVENT_END - Date.now()) / 864e5));
+  $('#eventTxt').textContent = `Limited event: a rare shark kitty is swimming nearby · ${d}d left`;
+}
+evBar.onclick = () => toast('Swipe lots to spot him… or ask a cat the right question.', 'waves');
+
 /* ---------- boost ---------- */
 const fmtMs = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 function paintBoost() {
@@ -939,5 +1122,5 @@ addEventListener('resize', () => layout());
 /* ---------- init ---------- */
 applyCfg(); paintMeAvatar(); renderSide(); sync(); fetchCats(); paintBoost(); maybeWelcome();
 matches.filter(m => !m.msgs.length && !m.opened).forEach(m => scheduleOpener(m));
-window.__pm = { decide, rewind, createMatch, respond, get deck() { return deck; }, get matches() { return matches; } };
+window.__pm = { decide, rewind, createMatch, mintsCat, summonMints, respond, get deck() { return deck; }, get matches() { return matches; } };
 })();
