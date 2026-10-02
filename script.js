@@ -226,10 +226,6 @@ async function fetchCats() {
       }
       if (!okReq) throw new Error('network');
     }
-    // rare spawn: Cabbagemints swims into the deck during the event
-    if (eventOn() && !seen.has(MINTS_ID) && !matches.some(m => m.id === MINTS_ID) && Math.random() < .12) {
-      seen.add(MINTS_ID); deck.splice(Math.min(deck.length, pos + 1 + Math.floor(Math.random() * 3)), 0, mintsCat()); added++; new Image().src = 'mints.png';
-    }
     exhausted = added === 0 && deck.length - pos === 0;
   } catch { failed = true; }
   finally { loading = false; sync(); }
@@ -1061,9 +1057,9 @@ function paintEvent() {
   const on = eventOn() && !matches.some(m => m.id === MINTS_ID);
   evBar.hidden = !on; if (!on) return;
   const d = Math.max(1, Math.ceil((EVENT_END - Date.now()) / 864e5));
-  $('#eventTxt').textContent = `Limited event: a rare shark kitty is swimming nearby · ${d}d left`;
+  $('#eventTxt').textContent = `Limited event: a rare shark kitty is hiding in the deep · ${d}d left`;
 }
-evBar.onclick = () => toast('Swipe lots to spot him… or ask a cat the right question.', 'waves');
+evBar.onclick = () => toast('He only answers one very specific question…', 'waves');
 
 /* ---------- boost ---------- */
 const fmtMs = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
